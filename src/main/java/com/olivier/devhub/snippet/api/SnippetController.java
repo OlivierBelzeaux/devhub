@@ -13,6 +13,8 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -20,11 +22,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.Collection;
 import java.util.UUID;
 
 @RestController
@@ -40,10 +43,16 @@ public class SnippetController {
     }
 
     @GetMapping
-    @Operation(summary = "List snippets")
+    @Operation(summary = "List snippets", description = "Filter with query, language or tag. Sort by updatedAt, createdAt, title or language.")
     @ApiResponse(responseCode = "200", description = "Snippets returned")
-    public Collection<SnippetResponse> findAll(@AuthenticationPrincipal Jwt jwt) {
-        return snippetService.findAll(UUID.fromString(jwt.getSubject()));
+    public SnippetPageResponse findAll(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String language,
+            @RequestParam(required = false) String tag,
+            @PageableDefault(size = 20, sort = "updatedAt", direction = Sort.Direction.DESC) Pageable pageable,
+            @AuthenticationPrincipal Jwt jwt
+    ) {
+        return snippetService.search(UUID.fromString(jwt.getSubject()), query, language, tag, pageable);
     }
 
     @GetMapping("/{id}")
