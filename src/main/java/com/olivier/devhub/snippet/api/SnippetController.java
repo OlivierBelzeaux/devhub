@@ -8,6 +8,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,8 +40,8 @@ public class SnippetController {
     @GetMapping
     @Operation(summary = "List snippets")
     @ApiResponse(responseCode = "200", description = "Snippets returned")
-    public Collection<SnippetResponse> findAll() {
-        return snippetService.findAll();
+    public Collection<SnippetResponse> findAll(@AuthenticationPrincipal Jwt jwt) {
+        return snippetService.findAll(UUID.fromString(jwt.getSubject()));
     }
 
     @GetMapping("/{id}")
@@ -49,8 +51,8 @@ public class SnippetController {
             @ApiResponse(responseCode = "400", description = "Invalid identifier", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "404", description = "Snippet not found", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     })
-    public SnippetResponse findById(@PathVariable UUID id) {
-        return snippetService.findById(id);
+    public SnippetResponse findById(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        return snippetService.findById(id, UUID.fromString(jwt.getSubject()));
     }
 
     @PostMapping
@@ -59,8 +61,8 @@ public class SnippetController {
             @ApiResponse(responseCode = "201", description = "Snippet created"),
             @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     })
-    public ResponseEntity<SnippetResponse> create(@Valid @RequestBody SnippetRequest request) {
-        SnippetResponse response = snippetService.create(request);
+    public ResponseEntity<SnippetResponse> create(@Valid @RequestBody SnippetRequest request, @AuthenticationPrincipal Jwt jwt) {
+        SnippetResponse response = snippetService.create(request, UUID.fromString(jwt.getSubject()));
         URI location = ServletUriComponentsBuilder.fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(response.id())
@@ -75,8 +77,8 @@ public class SnippetController {
             @ApiResponse(responseCode = "400", description = "Invalid request or identifier", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "404", description = "Snippet not found", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     })
-    public SnippetResponse update(@PathVariable UUID id, @Valid @RequestBody SnippetRequest request) {
-        return snippetService.update(id, request);
+    public SnippetResponse update(@PathVariable UUID id, @Valid @RequestBody SnippetRequest request, @AuthenticationPrincipal Jwt jwt) {
+        return snippetService.update(id, request, UUID.fromString(jwt.getSubject()));
     }
 
     @DeleteMapping("/{id}")
@@ -86,8 +88,8 @@ public class SnippetController {
             @ApiResponse(responseCode = "400", description = "Invalid identifier", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class))),
             @ApiResponse(responseCode = "404", description = "Snippet not found", content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class)))
     })
-    public ResponseEntity<Void> delete(@PathVariable UUID id) {
-        snippetService.delete(id);
+    public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
+        snippetService.delete(id, UUID.fromString(jwt.getSubject()));
         return ResponseEntity.noContent().build();
     }
 }

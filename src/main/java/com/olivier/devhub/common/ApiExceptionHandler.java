@@ -4,6 +4,7 @@ import com.olivier.devhub.snippet.service.SnippetNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -16,6 +17,11 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    @ExceptionHandler(AuthenticationException.class)
+    ProblemDetail handleAuthenticationFailure() {
+        return problem(HttpStatus.UNAUTHORIZED, "Authentication failed", "Invalid email or password.");
+    }
 
     @ExceptionHandler(SnippetNotFoundException.class)
     ProblemDetail handleSnippetNotFound(SnippetNotFoundException exception) {
