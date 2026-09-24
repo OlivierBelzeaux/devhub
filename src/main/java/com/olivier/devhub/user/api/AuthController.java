@@ -2,6 +2,7 @@ package com.olivier.devhub.user.api;
 
 import com.olivier.devhub.user.domain.UserRole;
 import com.olivier.devhub.user.service.AuthService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,6 +31,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
+    @SecurityRequirement(name = "bearerAuth")
     public CurrentUserResponse me(@AuthenticationPrincipal Jwt jwt) {
         return new CurrentUserResponse(
                 UUID.fromString(jwt.getSubject()),
