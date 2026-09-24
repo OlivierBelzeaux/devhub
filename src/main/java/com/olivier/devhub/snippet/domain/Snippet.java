@@ -1,10 +1,15 @@
 package com.olivier.devhub.snippet.domain;
 
+import com.olivier.devhub.user.domain.UserAccount;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -33,6 +38,13 @@ public class Snippet {
 
     private Instant updatedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "owner_id")
+    private UserAccount owner;
+
+    @Enumerated(EnumType.STRING)
+    private SnippetVisibility visibility;
+
     @ManyToMany
     @JoinTable(
             name = "snippet_tags",
@@ -44,8 +56,10 @@ public class Snippet {
     protected Snippet() {
     }
 
-    public Snippet(UUID id, String title, String content, String language, String description, Set<Tag> tags) {
+    public Snippet(UUID id, UserAccount owner, String title, String content, String language, String description, Set<Tag> tags) {
         this.id = id;
+        this.owner = owner;
+        this.visibility = SnippetVisibility.PRIVATE;
         update(title, content, language, description, tags);
     }
 
@@ -100,5 +114,9 @@ public class Snippet {
 
     public Set<Tag> getTags() {
         return tags;
+    }
+
+    public SnippetVisibility getVisibility() {
+        return visibility;
     }
 }
