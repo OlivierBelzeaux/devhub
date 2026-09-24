@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+.git
+.idea
+target
+
+README.md
+HELP.md
