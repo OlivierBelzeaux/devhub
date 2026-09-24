@@ -1,18 +1,23 @@
 package com.olivier.devhub.snippet.service;
 
 import com.olivier.devhub.snippet.api.SnippetRequest;
+import com.olivier.devhub.snippet.api.SnippetPageResponse;
 import com.olivier.devhub.snippet.api.SnippetResponse;
 import com.olivier.devhub.snippet.domain.Snippet;
 import com.olivier.devhub.snippet.domain.SnippetVisibility;
 import com.olivier.devhub.snippet.domain.Tag;
 import com.olivier.devhub.snippet.repository.SnippetRepository;
+import com.olivier.devhub.snippet.repository.SnippetSpecifications;
 import com.olivier.devhub.snippet.repository.TagRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.transaction.annotation.Transactional;
 import com.olivier.devhub.user.domain.UserAccount;
 import com.olivier.devhub.user.repository.UserAccountRepository;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -34,10 +39,8 @@ public class SnippetService {
     }
 
     @Transactional(readOnly = true)
-    public Collection<SnippetResponse> findAll(UUID ownerId) {
-        return snippetRepository.findAllByOwnerIdOrderByUpdatedAtDesc(ownerId).stream()
-                .map(this::toResponse)
-                .toList();
+    public SnippetPageResponse search(UUID ownerId, String query, String language, String tag, Pageable pageable) {
+        return search(SnippetSpecifications.ownedBy(ownerId), query, language, tag, pageable);
     }
 
     @Transactional(readOnly = true)
@@ -78,16 +81,35 @@ public class SnippetService {
     }
 
     @Transactional(readOnly = true)
-    public Collection<SnippetResponse> findDemoSnippets() {
-        return snippetRepository.findAllByVisibilityOrderByUpdatedAtDesc(SnippetVisibility.DEMO).stream()
-                .map(this::toResponse)
-                .toList();
+    public SnippetPageResponse searchDemoSnippets(String query, String language, String tag, Pageable pageable) {
+        return search(SnippetSpecifications.visibleAsDemo(), query, language, tag, pageable);
     }
 
     @Transactional(readOnly = true)
     public SnippetResponse findDemoSnippet(UUID id) {
         return toResponse(snippetRepository.findByIdAndVisibility(id, SnippetVisibility.DEMO)
                 .orElseThrow(() -> new SnippetNotFoundException(id)));
+    }
+
+    private SnippetPageResponse search(
+            Specification<Snippet> specification,
+            String query,
+            String language,
+            String tag,
+            Pageable pageable
+    ) {
+        if (StringUtils.hasText(query)) {
+            specification = specification.and(SnippetSpecifications.matchesQuery(query.trim()));
+        }
+        if (StringUtils.hasText(language)) {
+            specification = specification.and(SnippetSpecifications.hasLanguage(language.trim()));
+        }
+        if (StringUtils.hasText(tag)) {
+            specification = specification.and(SnippetSpecifications.hasTag(tag.trim()));
+        }
+
+        Page<SnippetResponse> snippets = snippetRepository.findAll(specification, pageable).map(this::toResponse);
+        return SnippetPageResponse.from(snippets);
     }
 
     private Snippet findSnippet(UUID id, UUID ownerId) {
